@@ -81,30 +81,36 @@ const documentStyle = typeof document === 'undefined' ? {} : document.documentEl
 const userSelectProp = ['userSelect', 'WebkitUserSelect'].find(prop => prop in documentStyle);
 let prevUserSelect;
 
-// @function disableTextSelection()
-// Prevents the user from selecting text in the document. Used internally
-// by Leaflet to override the behaviour of any click-and-drag interaction on
-// the map. Affects drag interactions on the whole document.
-export function disableTextSelection() {
-	const value = documentStyle[userSelectProp];
+// @function disableTextSelection(el?: HTMLElement)
+// Prevents the user from selecting text in the given element (or the whole document if none is provided).
+// Used internally by Leaflet to override the behaviour of any click-and-drag interaction on the map.
+export function disableTextSelection(el) {
+	const element = el || document.documentElement;
+	const style = element.style;
+	const currentValue = style[userSelectProp];
 
-	if (value === 'none') {
+	// Store the current user-select style to restore it later
+	if (currentValue === 'none') {
 		return;
 	}
 
-	prevUserSelect = value;
-	documentStyle[userSelectProp] = 'none';
+	// Attach saved style to element for restoration
+	element._prevUserSelect = currentValue;
+	style[userSelectProp] = 'none';
 }
 
-// @function enableTextSelection()
+// @function enableTextSelection(el?: HTMLElement)
 // Cancels the effects of a previous [`DomUtil.disableTextSelection`](#domutil-disabletextselection).
-export function enableTextSelection() {
-	if (typeof prevUserSelect === 'undefined') {
+export function enableTextSelection(el) {
+	const element = el || document.documentElement;
+	const style = element.style;
+
+	if (typeof element._prevUserSelect === 'undefined') {
 		return;
 	}
 
-	documentStyle[userSelectProp] = prevUserSelect;
-	prevUserSelect = undefined;
+	style[userSelectProp] = element._prevUserSelect;
+	delete element._prevUserSelect;
 }
 
 // @function disableImageDrag()
@@ -169,3 +175,4 @@ export function getScale(element) {
 		boundingClientRect: rect
 	};
 }
+
